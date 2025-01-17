@@ -9,10 +9,8 @@ import (
 	"github.com/JigmeTenzinChogyel/snippet-box/internal/models"
 )
 
-// Change the signature of the home handler so it is defined as a method against
-// *application.
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-   w.Header().Add("Server", "Go")
+    w.Header().Add("Server", "Go")
     
     snippets, err := app.snippets.Latest()
     if err != nil {
@@ -20,39 +18,20 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    for _, snippet := range snippets {
-        fmt.Fprintf(w, "%+v\n", snippet)
-    }
- // files := []string{
-    //     "./ui/html/base.tmpl",
-    //     "./ui/html/partials/nav.tmpl",
-    //     "./ui/html/pages/home.tmpl",
-    // }
+    data := app.newTemplateData(r)
+    data.Snippets = snippets
 
-    // ts, err := template.ParseFiles(files...)
-    // if err != nil {
-    //     app.serverError(w, r, err)
-    //     return
-    // }
-
-    // err = ts.ExecuteTemplate(w, "base", nil)
-    // if err != nil {
-    //     app.serverError(w, r, err)
-    // }
+    // Pass the data to the render() helper as normal.
+    app.render(w, r, http.StatusOK, "home.tmpl", data)
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
-    id, err := strconv.Atoi(r.PathValue("id"))
+   id, err := strconv.Atoi(r.PathValue("id"))
     if err != nil || id < 1 {
-        http.NotFound(w, r)
-
         http.NotFound(w, r)
         return
     }
 
-    // Use the SnippetModel's Get() method to retrieve the data for a
-    // specific record based on its ID. If no matching record is found,
-    // return a 404 Not Found response.
     snippet, err := app.snippets.Get(id)
     if err != nil {
         if errors.Is(err, models.ErrNoRecord) {
@@ -63,8 +42,11 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Write the snippet data as a plain-text HTTP response body.
-    fmt.Fprintf(w, "%+v", snippet)
+    // And do the same thing again here...
+    data := app.newTemplateData(r)
+    data.Snippet = snippet
+
+    app.render(w, r, http.StatusOK, "view.tmpl", data)
 }
 
 
@@ -94,3 +76,4 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
     // Redirect the user to the relevant page for the snippet.
     http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
+
